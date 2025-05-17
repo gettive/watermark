@@ -3,6 +3,9 @@ from PIL import Image
 from io import BytesIO
 import hashlib
 import os
+import urllib.request
+import json
+
 
 s3 = boto3.client('s3')
 
