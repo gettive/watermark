@@ -1,21 +1,21 @@
 import boto3
 from PIL import Image
 from io import BytesIO
+import hashlib
 import os
 
 s3 = boto3.client('s3')
 
+def add_watermark(source_bucket, source_object_key, target_bucket, watermark_bucket):
+    text = source_bucket + '/' + source_object_key
+    watermark_object_key = hashlib.sha256(text.encode()).hexdigest()
 
-TARGET_BUCKET = os.environ["TARGET_BUCKET"]
-WATERMARK_KEY = os.environ["WATERMARK_KEY"]
-
-def add_watermark(source_bucket, object_key):
     # Load source image
-    source_resp = s3.get_object(Bucket=source_bucket, Key=object_key)
+    source_resp = s3.get_object(Bucket=source_bucket, Key=source_object_key)
     image = Image.open(BytesIO(source_resp['Body'].read())).convert("RGBA")
 
     # Load watermark image
-    watermark_resp = s3.get_object(Bucket=watermark_bucket, Key=WATERMARK_KEY)
+    watermark_resp = s3.get_object(Bucket=watermark_bucket, Key=watermark_object_key)
     watermark = Image.open(BytesIO(watermark_resp['Body'].read())).convert("RGBA")
 
     # Resize watermark if it's too large
@@ -41,9 +41,9 @@ def add_watermark(source_bucket, object_key):
     buffer.seek(0)
 
     # Upload back to S3
-    output_key = f"watermarked/{object_key}"
+    output_key = f"watermarked/{source_object_key}"
     s3.put_object(
-        Bucket=TARGET_BUCKET,
+        Bucket=target_bucket,
         Key=output_key,
         Body=buffer,
         ContentType="image/jpeg"
@@ -51,21 +51,25 @@ def add_watermark(source_bucket, object_key):
 
     return {
         'statusCode': 200,
-        'body': f"Watermarked image saved to {TARGET_BUCKET}/{output_key}"
+        'body': f"Watermarked image saved to {target_bucket}/{output_key}"
     }
         
 
 def lambda_handler(event, context=None):
-    
-    for record in event["Records"]:
-        source_bucket = record['s3']['bucket']['name']
-        object_key = record['s3']['object']['key']
-
-        result = add_watermark(source_bucket, object_key)
+    target_bucket_key = add_watermark(
+        event['source_bucket'],
+        event['source_object_key'],
+        event['target_bucket'],
+        event['watermark_bucket']
+    )
 
     return {
         "statusCode": 200,
-        "body": "Files copied successfully"
+        "body": "Watermark Added successfully",
+        "data": {
+            "targetBucketObjectKey": target_bucket_key
+            "targetBucket": event['target_bucket']
+        }
     }
 
 if __name__ == "__main__":
