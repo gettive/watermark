@@ -9,16 +9,13 @@ import json
 
 s3 = boto3.client('s3')
 
-def add_watermark(source_bucket, source_object_key, target_bucket, watermark_bucket):
-    text = source_bucket + '/' + source_object_key
-    watermark_object_key = hashlib.sha256(text.encode()).hexdigest()
-
+def add_watermark(source_bucket, source_bucket_object_key, target_bucket, watermark_bucket, watermark_bucket_object_key):
     # Load source image
-    source_resp = s3.get_object(Bucket=source_bucket, Key=source_object_key)
+    source_resp = s3.get_object(Bucket=source_bucket, Key=source_bucket_object_key)
     image = Image.open(BytesIO(source_resp['Body'].read())).convert("RGBA")
 
     # Load watermark image
-    watermark_resp = s3.get_object(Bucket=watermark_bucket, Key=watermark_object_key)
+    watermark_resp = s3.get_object(Bucket=watermark_bucket, Key=watermark_bucket_object_key)
     watermark = Image.open(BytesIO(watermark_resp['Body'].read())).convert("RGBA")
 
     # Resize watermark if it's too large
@@ -44,7 +41,8 @@ def add_watermark(source_bucket, source_object_key, target_bucket, watermark_buc
     buffer.seek(0)
 
     # Upload back to S3
-    output_key = f"watermarked/{source_object_key}"
+    text = source_bucket + '/' + source_bucket_object_key
+    output_key = hashlib.sha256(text.encode()).hexdigest()
     s3.put_object(
         Bucket=target_bucket,
         Key=output_key,
@@ -62,9 +60,10 @@ def lambda_handler(event, context=None):
     data = json.loads(event['body'])
     target_bucket_key = add_watermark(
         data['source_bucket'],
-        data['source_object_key'],
+        data['source_bucket_object_key'],
         data['target_bucket'],
-        data['watermark_bucket']
+        data['watermark_bucket'],
+        data['watermark_bucket_object_key']
     )
 
     return {
@@ -75,6 +74,7 @@ def lambda_handler(event, context=None):
             "targetBucket": data['target_bucket']
         }
     }
+
 
 if __name__ == "__main__":
     AWS_LAMBDA_RUNTIME_API = os.environ["AWS_LAMBDA_RUNTIME_API"]
