@@ -59,11 +59,12 @@ def add_watermark(source_bucket, source_object_key, target_bucket, watermark_buc
         
 
 def lambda_handler(event, context=None):
+    data = json.loads(event['body'])
     target_bucket_key = add_watermark(
-        event['source_bucket'],
-        event['source_object_key'],
-        event['target_bucket'],
-        event['watermark_bucket']
+        data['source_bucket'],
+        data['source_object_key'],
+        data['target_bucket'],
+        data['watermark_bucket']
     )
 
     return {
@@ -71,7 +72,7 @@ def lambda_handler(event, context=None):
         "body": "Watermark Added successfully",
         "data": {
             "targetBucketObjectKey": target_bucket_key
-            "targetBucket": event['target_bucket']
+            "targetBucket": data['target_bucket']
         }
     }
 
