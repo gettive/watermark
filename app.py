@@ -5,6 +5,7 @@ import hashlib
 import os
 import urllib.request
 import json
+import base64
 
 
 s3 = boto3.client('s3')
