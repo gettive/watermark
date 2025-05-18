@@ -16,14 +16,16 @@ def get_source_image(source_bucket, source_bucket_object_key):
 
     return source_image
 
-def get_watermark(bucket, key, max_watermark_width):
+def get_watermark(bucket, key, watermark_width, watermark_height):
     watermark_resp = s3.get_object(Bucket=bucket, Key=key)
     watermark = Image.open(BytesIO(watermark_resp['Body'].read())).convert("RGBA")
 
-    if watermark.width > max_watermark_width:
-        ratio = max_watermark_width / float(watermark.width)
-        new_size = (int(watermark.width * ratio), int(watermark.height * ratio))
-        watermark = watermark.resize(new_size, Image.ANTIALIAS)
+    ratio_width = watermark_width / float(watermark.width)
+    ratio_height = watermark_height / float(watermark.height)
+    ratio = min(ratio_width, ratio_height)
+
+    new_size = (int(watermark.width * ratio), int(watermark.height * ratio))
+    watermark = watermark.resize(new_size, Image.ANTIALIAS)
 
     return watermark
 
@@ -73,7 +75,8 @@ def lambda_handler(event, context=None):
 
     source_image_width, source_image_height = source_image.size
     width = source_image_width * watermark_size_width
-    watermark = get_watermark(watermark_bucket, watermark_bucket_object_key, width)
+    height = source_image_height * watermark_size_height
+    watermark = get_watermark(watermark_bucket, watermark_bucket_object_key, width, height)
 
     position_x = source_image_width * watermark_position_left
     position_y = source_image_height * watermark_position_top
