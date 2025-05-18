@@ -48,19 +48,19 @@ def lambda_handler(event, context=None):
     source_bucket_object_key = data['source_bucket_object_key']
     watermark_bucket = data['watermark_bucket']
     watermark_bucket_object_key = data['watermark_bucket_object_key']
-    watermark_position_top = data['watermark_position_top']
-    watermark_position_left = data['watermark_position_left']
-    watermark_size_height = data['watermark_size_height']
-    watermark_size_width = data['watermark_size_width']
+    watermark_position_top = float(data['watermark_position_top'].strip('%')) / 100
+    watermark_position_left = float(data['watermark_position_left'].strip('%')) / 100
+    watermark_size_height = float(data['watermark_size_height'].strip('%')) / 100
+    watermark_size_width = float(data['watermark_size_width'].strip('%')) / 100
     
     source_image = get_source_image(source_bucket, source_bucket_object_key)
 
     source_image_width, source_image_height = source_image.size
-    width = source_image_width * float(watermark_size_width)
+    width = source_image_width * watermark_size_width
     watermark = get_watermark(watermark_bucket, watermark_bucket_object_key, width)
 
-    position_x = float(watermark_position_left) + (0.5 * float(watermark_size_width))
-    position_y = float(watermark_position_top) + (0.5 * float(watermark_size_height))
+    position_x = source_image_width * (watermark_position_left + (0.5 * watermark_size_width))
+    position_y = source_image_height * (watermark_position_top + (0.5 * watermark_size_height))
     watermarked_image = add_watermark(source_image, target_bucket, watermark, position_x, position_y)
 
     return {
