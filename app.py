@@ -39,7 +39,19 @@ def add_watermark(source_image, watermark, position_x, position_y):
     watermarked_image.convert("RGB").save(buffer, format="JPEG")
     buffer.seek(0)
 
-    encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    encoded_image = None
+
+    try:
+        encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        return {
+            'message': 'SUCCESS',
+            'data': encoded_image
+        }
+    except Exception as e:
+        return {
+            'message': 'ERROR',
+            'data': f"An error occurred: {e}"
+        }        
 
     return encoded_image
         
@@ -65,13 +77,11 @@ def lambda_handler(event, context=None):
 
     position_x = source_image_width * (watermark_position_left + (0.5 * watermark_size_width))
     position_y = source_image_height * (watermark_position_top + (0.5 * watermark_size_height))
-    watermarked_image = add_watermark(source_image, watermark, position_x, position_y)
+    response = add_watermark(source_image, watermark, position_x, position_y)
 
     return {
         "statusCode": 200,
-        "body": {
-            "watermarkedImage": watermarked_image
-        }
+        "body": response
     }
 
 
