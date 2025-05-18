@@ -28,7 +28,10 @@ def get_watermark(bucket, key, max_watermark_width):
 
 def add_watermark(source_image, watermark, position_x, position_y):
     watermarked_image = source_image.copy()
-    watermarked_image.paste(watermark, (int(position_x), int(position_y)), watermark)
+
+    x = int(position_x)
+    y = int(position_y)
+    watermarked_image.paste(watermark, (x, y), watermark)
 
     # Save to buffer
     buffer = BytesIO()
