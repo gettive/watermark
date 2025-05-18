@@ -42,15 +42,17 @@ def add_watermark(source_image, target_bucket, target_key, watermark, position_x
 
 def lambda_handler(event, context=None):
 
-    source_bucket,
-    source_bucket_object_key,
-    watermark_bucket,
-    watermark_bucket_object_key,
-    watermark_position_top,
-    watermark_position_left,
-    watermark_size_height,
-    watermark_size_width,
-    watermark_details = json.loads(event['body'])
+    data = json.loads(event['body'])
+
+    source_bucket = data['source_bucket'] 
+    source_bucket_object_key = data['source_bucket_object_key']
+    watermark_bucket = data['watermark_bucket']
+    watermark_bucket_object_key = data['watermark_bucket_object_key']
+    watermark_position_top = data['watermark_position_top']
+    watermark_position_left = data['watermark_position_left']
+    watermark_size_height = data['watermark_size_height']
+    watermark_size_width = data['watermark_size_width']
+    watermark_details = data['watermark_details']
     
     source_image = get_source_image(source_bucket, source_bucket_object_key)
 
@@ -72,7 +74,7 @@ def lambda_handler(event, context=None):
             "watermarkedImage": watermarked_image
         }
     }
-    
+
 
 if __name__ == "__main__":
     AWS_LAMBDA_RUNTIME_API = os.environ["AWS_LAMBDA_RUNTIME_API"]
