@@ -9,72 +9,70 @@ import json
 
 s3 = boto3.client('s3')
 
-def add_watermark(source_bucket, source_bucket_object_key, target_bucket, watermark_bucket, watermark_bucket_object_key):
-    # Load source image
+def get_source_image(source_bucket, source_bucket_object_key):
     source_resp = s3.get_object(Bucket=source_bucket, Key=source_bucket_object_key)
-    image = Image.open(BytesIO(source_resp['Body'].read())).convert("RGBA")
+    source_image = Image.open(BytesIO(source_resp['Body'].read())).convert("RGBA")
 
-    # Load watermark image
-    watermark_resp = s3.get_object(Bucket=watermark_bucket, Key=watermark_bucket_object_key)
+    return source_image
+
+def get_watermark(bucket, key, max_watermark_width):
+    watermark_resp = s3.get_object(Bucket=bucket, Key=key)
     watermark = Image.open(BytesIO(watermark_resp['Body'].read())).convert("RGBA")
 
-    # Resize watermark if it's too large
-    image_width, image_height = image.size
-    max_watermark_width = int(image_width * 0.3)
     if watermark.width > max_watermark_width:
         ratio = max_watermark_width / float(watermark.width)
         new_size = (int(watermark.width * ratio), int(watermark.height * ratio))
         watermark = watermark.resize(new_size, Image.ANTIALIAS)
 
-    # Position watermark at bottom-right
-    wm_width, wm_height = watermark.size
-    x = image_width - wm_width - 10
-    y = image_height - wm_height - 10
+    return watermark
 
-    # Paste watermark on image
-    watermarked_image = image.copy()
-    watermarked_image.paste(watermark, (x, y), watermark)
+def add_watermark(source_image, target_bucket, target_key, watermark, position_x, position_y):
+    watermarked_image = source_image.copy()
+    watermarked_image.paste(watermark, (position_x, position_y), watermark)
 
     # Save to buffer
     buffer = BytesIO()
     watermarked_image.convert("RGB").save(buffer, format="JPEG")
     buffer.seek(0)
 
-    # Upload back to S3
-    text = source_bucket + '/' + source_bucket_object_key
-    output_key = hashlib.sha256(text.encode()).hexdigest()
-    s3.put_object(
-        Bucket=target_bucket,
-        Key=output_key,
-        Body=buffer,
-        ContentType="image/jpeg"
-    )
+    encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-    return {
-        'statusCode': 200,
-        'body': f"Watermarked image saved to {target_bucket}/{output_key}"
-    }
+    return encoded_image
         
 
 def lambda_handler(event, context=None):
-    data = json.loads(event['body'])
-    target_bucket_key = add_watermark(
-        data['source_bucket'],
-        data['source_bucket_object_key'],
-        data['target_bucket'],
-        data['watermark_bucket'],
-        data['watermark_bucket_object_key']
-    )
+
+    source_bucket,
+    source_bucket_object_key,
+    watermark_bucket,
+    watermark_bucket_object_key,
+    watermark_position_top,
+    watermark_position_left,
+    watermark_size_height,
+    watermark_size_width,
+    watermark_details = json.loads(event['body'])
+    
+    source_image = get_source_image(source_bucket, source_bucket_object_key)
+
+    source_image_width, source_image_height = source_image.size
+    width = source_image_width * float(watermark_size_width)
+    watermark = get_watermark(watermark_bucket, watermark_bucket_object_key, width)
+
+    text = source_bucket + '/' + source_bucket_object_key
+    target_key = hashlib.sha256(text.encode()).hexdigest()
+
+    position_x = float(watermark_position_left) + (0.5 * float(watermark_size_width))
+    position_y = float(watermark_position_top) + (0.5 * float(watermark_size_height))
+    watermarked_image = add_watermark(source_image, target_bucket, target_key, watermark, position_x, position_y)
 
     return {
         "statusCode": 200,
         "body": "Watermark Added successfully",
         "data": {
-            "targetBucketObjectKey": target_bucket_key
-            "targetBucket": data['target_bucket']
+            "watermarkedImage": watermarked_image
         }
     }
-
+    
 
 if __name__ == "__main__":
     AWS_LAMBDA_RUNTIME_API = os.environ["AWS_LAMBDA_RUNTIME_API"]
