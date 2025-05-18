@@ -52,7 +52,6 @@ def lambda_handler(event, context=None):
     watermark_position_left = data['watermark_position_left']
     watermark_size_height = data['watermark_size_height']
     watermark_size_width = data['watermark_size_width']
-    watermark_details = data['watermark_details']
     
     source_image = get_source_image(source_bucket, source_bucket_object_key)
 
