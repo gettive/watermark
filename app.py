@@ -26,7 +26,7 @@ def get_watermark(bucket, key, max_watermark_width):
 
     return watermark
 
-def add_watermark(source_image, target_bucket, target_key, watermark, position_x, position_y):
+def add_watermark(source_image, target_bucket, watermark, position_x, position_y):
     watermarked_image = source_image.copy()
     watermarked_image.paste(watermark, (position_x, position_y), watermark)
 
@@ -59,12 +59,9 @@ def lambda_handler(event, context=None):
     width = source_image_width * float(watermark_size_width)
     watermark = get_watermark(watermark_bucket, watermark_bucket_object_key, width)
 
-    text = source_bucket + '/' + source_bucket_object_key
-    target_key = hashlib.sha256(text.encode()).hexdigest()
-
     position_x = float(watermark_position_left) + (0.5 * float(watermark_size_width))
     position_y = float(watermark_position_top) + (0.5 * float(watermark_size_height))
-    watermarked_image = add_watermark(source_image, target_bucket, target_key, watermark, position_x, position_y)
+    watermarked_image = add_watermark(source_image, target_bucket, watermark, position_x, position_y)
 
     return {
         "statusCode": 200,
