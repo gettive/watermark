@@ -75,8 +75,8 @@ def lambda_handler(event, context=None):
     width = source_image_width * watermark_size_width
     watermark = get_watermark(watermark_bucket, watermark_bucket_object_key, width)
 
-    position_x = source_image_width * (watermark_position_left + (0.5 * watermark_size_width))
-    position_y = source_image_height * (watermark_position_top + (0.5 * watermark_size_height))
+    position_x = source_image_width * watermark_position_left
+    position_y = source_image_height * watermark_position_top
     response = add_watermark(source_image, watermark, position_x, position_y)
 
     return {
