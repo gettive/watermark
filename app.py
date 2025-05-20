@@ -9,15 +9,17 @@ import base64
 
 
 s3 = boto3.client('s3')
+SOURCE_BUCKET = os.environ["SOURCE_BUCKET"]
+WATERMARK_BUCKET = os.environ["WATERMARK_BUCKET"]
 
-def get_source_image(source_bucket, source_bucket_object_key):
-    source_resp = s3.get_object(Bucket=source_bucket, Key=source_bucket_object_key)
+def get_source_image(source_bucket_object_key):
+    source_resp = s3.get_object(Bucket=SOURCE_BUCKET, Key=source_bucket_object_key)
     source_image = Image.open(BytesIO(source_resp['Body'].read())).convert("RGBA")
 
     return source_image
 
-def get_watermark(bucket, key, watermark_width, watermark_height):
-    watermark_resp = s3.get_object(Bucket=bucket, Key=key)
+def get_watermark(watermark_bucket_object_key, watermark_width, watermark_height):
+    watermark_resp = s3.get_object(Bucket=WATERMARK_BUCKET, Key=key)
     watermark = Image.open(BytesIO(watermark_resp['Body'].read())).convert("RGBA")
 
     ratio_width = watermark_width / float(watermark.width)
@@ -62,21 +64,19 @@ def lambda_handler(event, context=None):
 
     data = json.loads(event['body'])
 
-    source_bucket = data['source_bucket'] 
     source_bucket_object_key = data['source_bucket_object_key']
-    watermark_bucket = data['watermark_bucket']
     watermark_bucket_object_key = data['watermark_bucket_object_key']
     watermark_position_top = float(data['watermark_position_top'].strip('%')) / 100
     watermark_position_left = float(data['watermark_position_left'].strip('%')) / 100
     watermark_size_height = float(data['watermark_size_height'].strip('%')) / 100
     watermark_size_width = float(data['watermark_size_width'].strip('%')) / 100
     
-    source_image = get_source_image(source_bucket, source_bucket_object_key)
+    source_image = get_source_image(source_bucket_object_key)
 
     source_image_width, source_image_height = source_image.size
     width = source_image_width * watermark_size_width
     height = source_image_height * watermark_size_height
-    watermark = get_watermark(watermark_bucket, watermark_bucket_object_key, width, height)
+    watermark = get_watermark(watermark_bucket_object_key, width, height)
 
     position_x = source_image_width * watermark_position_left
     position_y = source_image_height * watermark_position_top
