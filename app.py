@@ -31,7 +31,7 @@ def get_watermark(watermark_bucket_object_key, watermark_width, watermark_height
 
     return watermark
 
-def add_watermark(source_image, watermark, position_x, position_y):
+def add_watermark(source_image, watermark, position_x, position_y, source_image_format):
     watermarked_image = source_image.copy()
 
     x = int(position_x)
@@ -40,7 +40,7 @@ def add_watermark(source_image, watermark, position_x, position_y):
 
     # Save to buffer
     buffer = BytesIO()
-    watermarked_image.convert("RGB").save(buffer, format="JPEG")
+    watermarked_image.convert("RGB").save(buffer, format=source_image_format)
     buffer.seek(0)
 
     encoded_image = None
@@ -87,6 +87,7 @@ def lambda_handler(event, context=None):
     watermark_size_width = float(data['watermark_size_width'].strip('%')) / 100
     
     source_image = get_source_image(source_bucket_object_key)
+    source_image_format = source_image.format
 
     source_image_width, source_image_height = source_image.size
     width = source_image_width * watermark_size_width
@@ -95,7 +96,7 @@ def lambda_handler(event, context=None):
 
     position_x = source_image_width * watermark_position_left
     position_y = source_image_height * watermark_position_top
-    response = add_watermark(source_image, watermark, position_x, position_y)
+    response = add_watermark(source_image, watermark, position_x, position_y, source_image_format)
 
     return {
         "statusCode": 200,
