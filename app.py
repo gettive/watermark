@@ -84,6 +84,11 @@ def lambda_handler(event, context=None):
 
     return {
         "statusCode": 200,
+        "headers": {
+            'Access-Control-Allow-Origin': 'https://*',
+            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Methods': 'POST',
+        },
         "body": json.dumps(response)
     }
 
