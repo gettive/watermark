@@ -19,7 +19,7 @@ def get_source_image(source_bucket_object_key):
     return source_image
 
 def get_watermark(watermark_bucket_object_key, watermark_width, watermark_height):
-    watermark_resp = s3.get_object(Bucket=WATERMARK_BUCKET, Key=key)
+    watermark_resp = s3.get_object(Bucket=WATERMARK_BUCKET, Key=watermark_bucket_object_key)
     watermark = Image.open(BytesIO(watermark_resp['Body'].read())).convert("RGBA")
 
     ratio_width = watermark_width / float(watermark.width)
