@@ -62,6 +62,22 @@ def add_watermark(source_image, watermark, position_x, position_y):
 
 def lambda_handler(event, context=None):
 
+
+    method = event['requestContext']["http"]["method"]
+    print(f"Request method: {method}")
+
+    if method == "OPTIONS":
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Access-Control-Allow-Origin": "https://*",
+                "Access-Control-Allow-Methods": "POST,OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                "Access-Control-Allow-Credentials": "true",
+            },
+            "body": ""
+        }
+
     data = json.loads(event['body'])
 
     source_bucket_object_key = data['source_bucket_object_key']
@@ -87,7 +103,7 @@ def lambda_handler(event, context=None):
         "headers": {
             'Access-Control-Allow-Origin': 'https://*',
             'Access-Control-Allow-Headers': '*',
-            'Access-Control-Allow-Methods': 'POST',
+            'Access-Control-Allow-Methods': 'POST,OPTIONS',
         },
         "body": json.dumps(response)
     }
