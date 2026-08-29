@@ -19,7 +19,7 @@ This is an AWS lambda function for watermarking S3 images with other S3 images. 
 
 The GitHub Actions workflow publishes `latest` and a commit-SHA tag to Amazon ECR Public whenever changes are pushed to `master`. Before enabling it, add these repository or environment secrets in GitHub:
 
-- `PUBLIC_ECR_REPOSITORY`: `public.ecr.aws/i3j1t5i1/watermark`
+- `PUBLIC_ECR_REPOSITORY`: ECR repository. Could be private, if that fits what you are looking for 
 - `AWS_ACCESS_KEY_ID`: access key for an IAM principal allowed to push to that public ECR repository
 - `AWS_SECRET_ACCESS_KEY`: corresponding secret access key
 
